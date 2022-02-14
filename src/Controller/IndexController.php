@@ -6,29 +6,35 @@ use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
-use Symfony\Component\Serializer\SerializerInterface;
-use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\Serializer;
+
 
 class IndexController extends AbstractController
 {
     /**
      * @Route("/", name="app_index")
      */
-    public function index(HttpClientInterface $weatherClient): Response
+    public function getWeather(HttpClientInterface $weatherClient): Response
     {
-        $apiKey = $this->getParameter('app_index');
-//        $apiUrl = "http://api.openweathermap.org/data/2.5/weather?id=" . $cityId . "&lang=ru&units=metric&APPID=" . $apiKey
+        $apiKey = $this->getParameter('openweathermap_token');
         $response = $weatherClient->request('GET', '/data/2.5/weather', [
             'query' => [
-                'id' => 625144,
+                'id' => $this->getParameter('city_id'),
                 'lang' => 'en',
                 'units' => 'metric',
                 'appid' => $apiKey
             ]
         ]);
-        return new Response($response->getContent());
-        //return $data = $data->toArray();
-        //return $data = $serializer->deserialize($data, 'json');
+
+        $currentTime = date('m/d/Y h:i:s a', time());
+        $data = $response->toArray();
+
+        $temp = array($data["main"]["temp"]);
+        $feels = array($data["main"]["feels_like"]);
+        $pressure = array($data["main"]["pressure"]);
+        $wind = array($data["wind"]["speed"]);
+        $clouds = array($data["weather"]["0"]["description"]);
+        $result = "Температура в Минске " . implode($temp) . "\n". "Ощущается как " . implode($feels) . "\n" . "Скорость ветра " . implode($wind) . "\n". "Атмосферное давление " . implode($pressure) . "\n" . "Облачность " . implode($clouds) . "\n" . "Время в Минске " . $currentTime;
+
+        return new Response($result);
     }
 }
